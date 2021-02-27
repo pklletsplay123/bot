@@ -233,6 +233,13 @@ module.exports = msgHandler = async (bocchi = new Client(), message) => {
             }
         }
 
+        // Simple anti virtext, sorted by chat length, by: VideFrelan
+        if (isGroupMsg && !isGroupAdmins && !isOwner) {
+            if (chats.length > 5000) {
+                await bocchi.sendTextWithMentions(from, `Terdeteksi @${sender.id} telah mengirim Virtext\nAnda akan dikick!`)
+                await bocchi.removeParticipant(groupId, sender.id)
+             }
+         }
         // Anti-fake-group link detector
         if (isGroupMsg && !isGroupAdmins && isBotGroupAdmins && isDetectorOn && !isOwner) {
             if (chats.match(new RegExp(/(https:\/\/chat.(?!whatsapp.com))/gi))) {
@@ -264,10 +271,17 @@ module.exports = msgHandler = async (bocchi = new Client(), message) => {
         if (isGroupMsg && isAutoStickerOn && isMedia && isImage && !isCmd) {
             const mediaData = await decryptMedia(message, uaOverride)
             const imageBase64 = `data:${mimetype};base64,${mediaData.toString('base64')}`
-            await bocchi.sendImageAsSticker(from, imageBase64)
+            await bocchi.sendImageAsSticker(from, imageBase64, { author: '@Yuuru', pack: 'IZUMI-BOT', keepScale: false })
             console.log(`Sticker processed for ${processTime(t, moment())} seconds`)
         }
 
+        // Auto-sticker-video
+        if (isGroupMsg && isAutoStickerOn && isMedia && isVideo && !isCmd) {
+            const mediaData = await decryptMedia(message, uaOverride)
+            const videoBase64 = `data:${mimetype};base64,${mediaData.toString('base64')}`
+            await bocchi.sendMp4AsSticker(from, videoBase64, null, { stickerMetadata: true, pack: 'IZUMI-BOT', author: '@Yuuru', fps: 30, startTime: `00:00:00.0`, endTime : `00:00:05.0`, crop: false, loop: 0 })
+            console.log(`Sticker processed for ${processTime(t, moment())} seconds`)
+        }
         // AFK by Slavyan
         if (isGroupMsg) {
             for (let ment of mentionedJidList) {
@@ -476,7 +490,7 @@ module.exports = msgHandler = async (bocchi = new Client(), message) => {
                     })
                     .catch(async (err) => {
                         console.error(err)
-                        await bocchi.reply(from, 'Maaf Senpai,Command ini masih dalam perbaikan!', id)
+                        await bocchi.reply(from, 'Error!', id)
                     })
             break
             case 'igdl': // by: VideFrelan
@@ -540,7 +554,7 @@ module.exports = msgHandler = async (bocchi = new Client(), message) => {
                     })
                     .catch(async (err) => {
                         console.error(err)
-                        await bocchi.reply(from, 'Maaf Senpai,Command ini masih dalam perbaikan!', id)
+                        await bocchi.reply(from, 'Error!', id)
                     })
             break
             case 'ytmp4':
@@ -563,7 +577,7 @@ module.exports = msgHandler = async (bocchi = new Client(), message) => {
                     })
                     .catch(async (err) => {
                         console.error(err)
-                        await bocchi.reply(from, 'Maaf Senpai,Command ini masih dalam perbaikan!', id)
+                        await bocchi.reply(from, 'Error!', id)
                     })
             break
             case 'ytmp44':
@@ -799,7 +813,61 @@ module.exports = msgHandler = async (bocchi = new Client(), message) => {
                         await bocchi.reply(from, 'Maaf Senpai,Command ini masih dalam perbaikan!', id)
                     })
             break
+            case 'jadwaltv': //Chika chantexxzz
+                if (!isRegistered) return await bocchi.reply(from, ind.notRegistered(), id)
+                if (args.length !== 1) return await bocchi.reply(from, ind.wrongFormat(), id)
+                await bocchi.reply(from, ind.wait(), id)
+                try {
+                    const jtv = await axios.get(`http://api.hurtzcrafter.xyz/jadwaltv?channel=${ar[0]}`)
+                    if (jtv.data.status === 'true') {
+                        let jtvx = `-----[ *JADWAL TV* ]-----\n`
+                        for (let i = 0; i < jtv.data.result.length; i++) {
+                            jtvx +=  `\n${jtv.data.result[i].jam} : ${jtv.data.result[i].tayang}`
+                        }
+                        await bocchi.sendText(from, jtvx, id)
+                    } else {
+                        await bocchi.sendText(from, `
+        _*STASIUN TV TIDAK TERDAFTAR*_
+        
+*Daftar list Channel tv :*\n
+1. Channel Indosiar
+    _keybot_ : ${prefix}jadwaltv indosiar\n
+2. Channel TransTV
+    _keybot_ : ${prefix}jadwaltv transtv\n
+3. Channel Trans7
+    _keybot_ : ${prefix}jadwaltv trans7\n
+4. Channel Rajawali TV
+    _keybot_ : ${prefix}jadwaltv rtv\n
+5. Channel SCTV
+    _keybot_ : ${prefix}jadwaltv sctv\n
+6. Channel RCTI
+    _keybot_ : ${prefix}jadwaltv rcti\n
+7. Channel NetTV
+    _keybot_ : ${prefix}jadwaltv nettv\n
+8. Channel KompasTV
+    _keybot_ : ${prefix}jadwaltv kompastv\n
+9. Channel ANTV
+    _keybot_ : ${prefix}jadwaltv antv\n
+10. Channel GlobalTV
+    _keybot_ : ${prefix}jadwaltv gtv\n
+11. Channel Inews TV
+    _keybot_ : ${prefix}jadwaltv inews\n
+12. Channel MNCTV
+    _keybot_ : ${prefix}jadwaltv mnctv\n
+13. Channel MetroTV
+    _keybot_ : ${prefix}jadwaltv metrotv\n
+14. Channel TVOne
+    _keybot_ : ${prefix}jadwaltv tvone\n
+15. Channel TVRI
+    _keybot_ : ${prefix}jadwaltv tvri
 
+        _*List TV Index*_`, id)
+                    }
+                } catch (err) {
+                    console.error(err)
+                    await bocchi.reply(from, 'Error!', id)
+                }
+            break
             case 'shortlink':
                 if (!isRegistered) return await bocchi.reply(from, ind.notRegistered(), id)
                 if (!isUrl(url)) return await bocchi.reply(from, ind.wrongFormat(), id)
@@ -1273,7 +1341,7 @@ module.exports = msgHandler = async (bocchi = new Client(), message) => {
                             .save(fileOutputPath)
                     })
                 } else {
-                    await bocchi.reply(from, 'Upload video dengan caption !mp3', id)
+                    await bocchi.reply(from, ind.wrongFormat(), id)
                 }
             break
             case 'playstore':
@@ -1743,8 +1811,20 @@ module.exports = msgHandler = async (bocchi = new Client(), message) => {
                     bocchi.reply(from, `Jati diri kamu yang sebenarnya adalah seorang yang ${jodoh.positif}\n\nNamun kamu memiliki kekurangan seperti ${jodoh.negatif}`, id)
                 }
             break
-            case '!husbu':
-                if (!isRegistered) return await client.reply(from, 'Nomor kamu belum terdaftar di database! Silakan daftar dengan format:\n*!register* <nama | daerah>', id)
+            case 'kpop':
+                if (!isRegistered) return await bocchi.reply(from, 'Nomor kamu belum terdaftar di database! Silakan daftar dengan format:\n*!register* <nama | daerah>', id)
+                    const po = ["kpop", "korean actors", "kpop idol", "korean kpop boys"]
+                    const ko = po[Math.floor(Math.random() * po.length)]
+                    const kpoop = 'https://api.fdci.se/rep.php?gambar=' + ko
+                    axios.get(kpoop)
+                        .then(async (result) => {
+                            const hai = JSON.parse(JSON.stringify(result.data))
+                            const mpshhp = hai[Math.floor(Math.random() * hai.length)]
+                            await bocchi.sendFileFromUrl(from, mpshhp, 'kpop.jpg', '', id)
+                        })
+            break
+            case 'husbu':
+                if (!isRegistered) return await bocchi.reply(from, 'Nomor kamu belum terdaftar di database! Silakan daftar dengan format:\n*!register* <nama | daerah>', id)
                     const hus = ["Hot Anime Boy", "Husbu", "Cool Anime Boys", "Anime Boy Keren"]
                     const bu = hus[Math.floor(Math.random() * hus.length)]
                     const cool = 'https://api.fdci.se/rep.php?gambar=' + bu
@@ -1752,7 +1832,7 @@ module.exports = msgHandler = async (bocchi = new Client(), message) => {
                         .then(async (result) => {
                             const h = JSON.parse(JSON.stringify(result.data))
                             const mpshh = h[Math.floor(Math.random() * h.length)]
-                            await client.sendFileFromUrl(from, mpshh, 'penyegar.jpg', '', id)
+                            await bocchi.sendFileFromUrl(from, mpshh, 'penyegar.jpg', '', id)
                         })
             break
             case 'translate':
@@ -1863,7 +1943,7 @@ module.exports = msgHandler = async (bocchi = new Client(), message) => {
             case 'del':
                 if (!isRegistered) return await bocchi.reply(from, ind.notRegistered(), id)
                 if (!quotedMsg) return await bocchi.reply(from, ind.wrongFormat(), id)
-                if (!quotedMsgObj.fromMe) return await bocchi.reply(from, ind.wrongFormat(), id)
+                if (!quotedMsgObj.fromMe) return await bocchi.reply(from, 'reply pesan yang ingin dihapus', id)
                 await bocchi.deleteMessage(quotedMsgObj.chatId, quotedMsgObj.id, false)
             break
             case 'report':
@@ -2049,6 +2129,52 @@ module.exports = msgHandler = async (bocchi = new Client(), message) => {
                         await bocchi.reply(from, 'Maaf Senpai,Command ini masih dalam perbaikan!', id)
                     })
             break 
+            case 'character':  //byAnto
+            case 'chartsearch':
+              if (!q) return await bocchi.reply(from, '*masukan nama karakter yang ingin di cari dengan benar*', id) 
+              if (!isRegistered) return await bocchi.reply(from, ind.notRegistered(), id)
+              if (limit.isLimit(sender.id, _limit, limitCount, isPremium, isOwner)) return await bocchi.reply(from, ind.limit(), id)
+              limit.addLimit(sender.id, _limit, isPremium, isOwner) 
+              try{
+                await bocchi.reply(from, ind.wait(), id)
+                const chara_key = await axios.get(`http://lolhuman.herokuapp.com/api/character/${q}?apikey=${config.lol}`)
+                const { name, description, favourites, media, image } = chara_key.data.result
+                let text_1 = `-----[ *${q}* ]-----\n*[NAME✨] : ${name.full}*\n*[KANJI] : ${name.native}*\n*[ID] : ${chara_key.data.result.id}*\n*[FAVORITE]: ${favourites}*\n\n`
+                        for (let i = 0; i < media.nodes.length; i++) {
+                const { id, idMal, title, type } = media.nodes[i]
+                    text_1 += `_________________\n\n_📚Judul:${title.romaji}_\n\n_Type:${type}_\n\n_📚Kanji:${title.native}_\n\n_CharId:${idMal}_\n\n_Id:${id}_\n_______________________\n\n`
+                        }
+                    text_1 += `*[DESC] :* ${description}\n____________[Character]__________`
+ 
+                    await bocchi.sendFileFromUrl(from, image.large, `${q}.jpg`, `${text_1}`, id)
+                    } catch {
+                        bocchi.reply(from, 'Character Not Found', id)
+                    }
+                   break
+            case 'doujindesu':
+                if (!isRegistered) return await bocchi.reply(from, ind.notRegistered(), id)
+                if (!isPremium) return await bocchi.reply(from, ind.notPremium(), id)
+                if (!q) return await bocchi.reply(from, ind.wrongFormat(), id)
+                if (limit.isLimit(sender.id, _limit, limitCount, isPremium, isOwner)) return await bocchi.reply(from, ind.limit(), id)
+                limit.addLimit(sender.id, _limit, isPremium, isOwner)
+                await bocchi.reply(from, ind.wait(), id)
+                const doujin_ = await axios.get(`http://lolhuman.herokuapp.com/api/nhentai/${q}?apikey=${config.lol}`)
+                try {
+                    const { title_romaji, title_native, read, file_pdf, info } = doujin_.data.result
+                    const kntl_ = doujin_.data.result.image
+                    const randem = kntl_[Math.floor(Math.random() * kntl_.length)]
+                    const cepete = `_____DOUJIN_____
+*[Title] : ${title_romaji}*
+*[info] : ${info}*
+*[Read] ${read}*
+`
+                    await bocchi.sendFileFromUrl(from, randem, 'duji.jpg', `${cepete}`, id)
+                    await bocchi.sendFileFromUrl(from, file_pdf, `${q}.pdf`, `${title_native}`, id)
+                } catch (err) {
+                    console.error(err)
+                    await bocchi.reply(from, 'Error!', id)
+                }
+            break
             case 'wallpaper':
             case 'wp':
                 if (!isRegistered) return await bocchi.reply(from, ind.notRegistered(), id)
@@ -2309,6 +2435,19 @@ module.exports = msgHandler = async (bocchi = new Client(), message) => {
                         await bocchi.reply(from, 'Maaf Senpai,Command ini masih dalam perbaikan!', id)
                     })
             break
+            case 'terbalik': // By Kris
+                if (!isRegistered) return await bocchi.reply(from, ind.notRegistered(), id)
+                if (!q) return bocchi.reply(from, ind.wrongFormat(), id)
+                if (limit.isLimit(sender.id, _limit, limitCount, isPremium, isOwner)) return await bocchi.reply(from, ind.limit(), id)
+                limit.addLimit(sender.id, _limit, isPremium, isOwner)
+                await bocchi.reply(from, ind.wait(), id)
+                axios.get(`https://videfikri.com/api/hurufterbalik/?query=${q}`)
+                    .then(async (res) => await bocchi.reply(from, res.data.result.kata, id))
+                    .catch(async (err) => {
+                        console.error(err)
+                        await bocchi.reply(from, 'Maaf Senpai,Command ini masih dalam perbaikan!', id)
+                    })
+            break
             case 'puisi': // By Kris
                 if (!isRegistered) return await bocchi.reply(from, ind.notRegistered(), id)
                 if (limit.isLimit(sender.id, _limit, limitCount, isPremium, isOwner)) return await bocchi.reply(from, ind.limit(), id)
@@ -2332,6 +2471,37 @@ module.exports = msgHandler = async (bocchi = new Client(), message) => {
                         console.error(err)
                         await bocchi.reply(from, 'Maaf Senpai,Command ini masih dalam perbaikan!', id)
                     })
+            break
+        case 'imgsearch':
+        if (!isRegistered) return await bocchi.reply(from, 'Nomor kamu belum terdaftar di database! Silakan daftar dengan format:\n*!register* <nama | daerah>', id)
+            if (!isRegistered) return await bocchi.reply(from, 'Foo', id)
+            if (args.length === 1) return await bocchi.reply(from, 'Bar', id)
+            const pin = body.slice(5)
+            const xyz = `https://api.fdci.se/rep.php?gambar=${pin}`
+            axios.get(xyz)
+                .then(async (res) => {
+                    const q = JSON.parse(JSON.stringify(res.data))
+                    const rand = q[Math.floor(Math.random() * q.length)]
+                    await bocchi.sendFileFromUrl(from, rand, `${pin}.jpg`, '', id)
+                })
+        break
+        case 'inu':
+            if (!isRegistered) return await bocchi.reply(from, 'Nomor kamu belum terdaftar di database! Silakan daftar dengan format:\n*!register* <nama | daerah>', id)
+            const list = ["https://cdn.shibe.online/shibes/247d0ac978c9de9d9b66d72dbdc65f2dac64781d.jpg","https://cdn.shibe.online/shibes/1cf322acb7d74308995b04ea5eae7b520e0eae76.jpg","https://cdn.shibe.online/shibes/1ce955c3e49ae437dab68c09cf45297d68773adf.jpg","https://cdn.shibe.online/shibes/ec02bee661a797518d37098ab9ad0c02da0b05c3.jpg","https://cdn.shibe.online/shibes/1e6102253b51fbc116b887e3d3cde7b5c5083542.jpg","https://cdn.shibe.online/shibes/f0c07a7205d95577861eee382b4c8899ac620351.jpg","https://cdn.shibe.online/shibes/3eaf3b7427e2d375f09fc883f94fa8a6d4178a0a.jpg","https://cdn.shibe.online/shibes/c8b9fcfde23aee8d179c4c6f34d34fa41dfaffbf.jpg","https://cdn.shibe.online/shibes/55f298bc16017ed0aeae952031f0972b31c959cb.jpg","https://cdn.shibe.online/shibes/2d5dfe2b0170d5de6c8bc8a24b8ad72449fbf6f6.jpg","https://cdn.shibe.online/shibes/e9437de45e7cddd7d6c13299255e06f0f1d40918.jpg","https://cdn.shibe.online/shibes/6c32141a0d5d089971d99e51fd74207ff10751e7.jpg","https://cdn.shibe.online/shibes/028056c9f23ff40bc749a95cc7da7a4bb734e908.jpg","https://cdn.shibe.online/shibes/4fb0c8b74dbc7653e75ec1da597f0e7ac95fe788.jpg","https://cdn.shibe.online/shibes/125563d2ab4e520aaf27214483e765db9147dcb3.jpg","https://cdn.shibe.online/shibes/ea5258fad62cebe1fedcd8ec95776d6a9447698c.jpg","https://cdn.shibe.online/shibes/5ef2c83c2917e2f944910cb4a9a9b441d135f875.jpg","https://cdn.shibe.online/shibes/6d124364f02944300ae4f927b181733390edf64e.jpg","https://cdn.shibe.online/shibes/92213f0c406787acd4be252edb5e27c7e4f7a430.jpg","https://cdn.shibe.online/shibes/40fda0fd3d329be0d92dd7e436faa80db13c5017.jpg","https://cdn.shibe.online/shibes/e5c085fc427528fee7d4c3935ff4cd79af834a82.jpg","https://cdn.shibe.online/shibes/f83fa32c0da893163321b5cccab024172ddbade1.jpg","https://cdn.shibe.online/shibes/4aa2459b7f411919bf8df1991fa114e47b802957.jpg","https://cdn.shibe.online/shibes/2ef54e174f13e6aa21bb8be3c7aec2fdac6a442f.jpg","https://cdn.shibe.online/shibes/fa97547e670f23440608f333f8ec382a75ba5d94.jpg","https://cdn.shibe.online/shibes/fb1b7150ed8eb4ffa3b0e61ba47546dd6ee7d0dc.jpg","https://cdn.shibe.online/shibes/abf9fb41d914140a75d8bf8e05e4049e0a966c68.jpg","https://cdn.shibe.online/shibes/f63e3abe54c71cc0d0c567ebe8bce198589ae145.jpg","https://cdn.shibe.online/shibes/4c27b7b2395a5d051b00691cc4195ef286abf9e1.jpg","https://cdn.shibe.online/shibes/00df02e302eac0676bb03f41f4adf2b32418bac8.jpg","https://cdn.shibe.online/shibes/4deaac9baec39e8a93889a84257338ebb89eca50.jpg","https://cdn.shibe.online/shibes/199f8513d34901b0b20a33758e6ee2d768634ebb.jpg","https://cdn.shibe.online/shibes/f3efbf7a77e5797a72997869e8e2eaa9efcdceb5.jpg","https://cdn.shibe.online/shibes/39a20ccc9cdc17ea27f08643b019734453016e68.jpg","https://cdn.shibe.online/shibes/e67dea458b62cf3daa4b1e2b53a25405760af478.jpg","https://cdn.shibe.online/shibes/0a892f6554c18c8bcdab4ef7adec1387c76c6812.jpg","https://cdn.shibe.online/shibes/1b479987674c9b503f32e96e3a6aeca350a07ade.jpg","https://cdn.shibe.online/shibes/0c80fc00d82e09d593669d7cce9e273024ba7db9.jpg","https://cdn.shibe.online/shibes/bbc066183e87457b3143f71121fc9eebc40bf054.jpg","https://cdn.shibe.online/shibes/0932bf77f115057c7308ef70c3de1de7f8e7c646.jpg","https://cdn.shibe.online/shibes/9c87e6bb0f3dc938ce4c453eee176f24636440e0.jpg","https://cdn.shibe.online/shibes/0af1bcb0b13edf5e9b773e34e54dfceec8fa5849.jpg","https://cdn.shibe.online/shibes/32cf3f6eac4673d2e00f7360753c3f48ed53c650.jpg","https://cdn.shibe.online/shibes/af94d8eeb0f06a0fa06f090f404e3bbe86967949.jpg","https://cdn.shibe.online/shibes/4b55e826553b173c04c6f17aca8b0d2042d309fb.jpg","https://cdn.shibe.online/shibes/a0e53593393b6c724956f9abe0abb112f7506b7b.jpg","https://cdn.shibe.online/shibes/7eba25846f69b01ec04de1cae9fed4b45c203e87.jpg","https://cdn.shibe.online/shibes/fec6620d74bcb17b210e2cedca72547a332030d0.jpg","https://cdn.shibe.online/shibes/26cf6be03456a2609963d8fcf52cc3746fcb222c.jpg","https://cdn.shibe.online/shibes/c41b5da03ad74b08b7919afc6caf2dd345b3e591.jpg","https://cdn.shibe.online/shibes/7a9997f817ccdabac11d1f51fac563242658d654.jpg","https://cdn.shibe.online/shibes/7221241bad7da783c3c4d84cfedbeb21b9e4deea.jpg","https://cdn.shibe.online/shibes/283829584e6425421059c57d001c91b9dc86f33b.jpg","https://cdn.shibe.online/shibes/5145c9d3c3603c9e626585cce8cffdfcac081b31.jpg","https://cdn.shibe.online/shibes/b359c891e39994af83cf45738b28e499cb8ffe74.jpg","https://cdn.shibe.online/shibes/0b77f74a5d9afaa4b5094b28a6f3ee60efcb3874.jpg","https://cdn.shibe.online/shibes/adccfdf7d4d3332186c62ed8eb254a49b889c6f9.jpg","https://cdn.shibe.online/shibes/3aac69180f777512d5dabd33b09f531b7a845331.jpg","https://cdn.shibe.online/shibes/1d25e4f592db83039585fa480676687861498db8.jpg","https://cdn.shibe.online/shibes/d8349a2436420cf5a89a0010e91bf8dfbdd9d1cc.jpg","https://cdn.shibe.online/shibes/eb465ef1906dccd215e7a243b146c19e1af66c67.jpg","https://cdn.shibe.online/shibes/3d14e3c32863195869e7a8ba22229f457780008b.jpg","https://cdn.shibe.online/shibes/79cedc1a08302056f9819f39dcdf8eb4209551a3.jpg","https://cdn.shibe.online/shibes/4440aa827f88c04baa9c946f72fc688a34173581.jpg","https://cdn.shibe.online/shibes/94ea4a2d4b9cb852e9c1ff599f6a4acfa41a0c55.jpg","https://cdn.shibe.online/shibes/f4478196e441aef0ada61bbebe96ac9a573b2e5d.jpg","https://cdn.shibe.online/shibes/96d4db7c073526a35c626fc7518800586fd4ce67.jpg","https://cdn.shibe.online/shibes/196f3ed10ee98557328c7b5db98ac4a539224927.jpg","https://cdn.shibe.online/shibes/d12b07349029ca015d555849bcbd564d8b69fdbf.jpg","https://cdn.shibe.online/shibes/80fba84353000476400a9849da045611a590c79f.jpg","https://cdn.shibe.online/shibes/94cb90933e179375608c5c58b3d8658ef136ad3c.jpg","https://cdn.shibe.online/shibes/8447e67b5d622ef0593485316b0c87940a0ef435.jpg","https://cdn.shibe.online/shibes/c39a1d83ad44d2427fc8090298c1062d1d849f7e.jpg","https://cdn.shibe.online/shibes/6f38b9b5b8dbf187f6e3313d6e7583ec3b942472.jpg","https://cdn.shibe.online/shibes/81a2cbb9a91c6b1d55dcc702cd3f9cfd9a111cae.jpg","https://cdn.shibe.online/shibes/f1f6ed56c814bd939645138b8e195ff392dfd799.jpg","https://cdn.shibe.online/shibes/204a4c43cfad1cdc1b76cccb4b9a6dcb4a5246d8.jpg","https://cdn.shibe.online/shibes/9f34919b6154a88afc7d001c9d5f79b2e465806f.jpg","https://cdn.shibe.online/shibes/6f556a64a4885186331747c432c4ef4820620d14.jpg","https://cdn.shibe.online/shibes/bbd18ae7aaf976f745bc3dff46b49641313c26a9.jpg","https://cdn.shibe.online/shibes/6a2b286a28183267fca2200d7c677eba73b1217d.jpg","https://cdn.shibe.online/shibes/06767701966ed64fa7eff2d8d9e018e9f10487ee.jpg","https://cdn.shibe.online/shibes/7aafa4880b15b8f75d916b31485458b4a8d96815.jpg","https://cdn.shibe.online/shibes/b501169755bcf5c1eca874ab116a2802b6e51a2e.jpg","https://cdn.shibe.online/shibes/a8989bad101f35cf94213f17968c33c3031c16fc.jpg","https://cdn.shibe.online/shibes/f5d78feb3baa0835056f15ff9ced8e3c32bb07e8.jpg","https://cdn.shibe.online/shibes/75db0c76e86fbcf81d3946104c619a7950e62783.jpg","https://cdn.shibe.online/shibes/8ac387d1b252595bbd0723a1995f17405386b794.jpg","https://cdn.shibe.online/shibes/4379491ef4662faa178f791cc592b52653fb24b3.jpg","https://cdn.shibe.online/shibes/4caeee5f80add8c3db9990663a356e4eec12fc0a.jpg","https://cdn.shibe.online/shibes/99ef30ea8bb6064129da36e5673649e957cc76c0.jpg","https://cdn.shibe.online/shibes/aeac6a5b0a07a00fba0ba953af27734d2361fc10.jpg","https://cdn.shibe.online/shibes/9a217cfa377cc50dd8465d251731be05559b2142.jpg","https://cdn.shibe.online/shibes/65f6047d8e1d247af353532db018b08a928fd62a.jpg","https://cdn.shibe.online/shibes/fcead395cbf330b02978f9463ac125074ac87ab4.jpg","https://cdn.shibe.online/shibes/79451dc808a3a73f99c339f485c2bde833380af0.jpg","https://cdn.shibe.online/shibes/bedf90869797983017f764165a5d97a630b7054b.jpg","https://cdn.shibe.online/shibes/dd20e5801badd797513729a3645c502ae4629247.jpg","https://cdn.shibe.online/shibes/88361ee50b544cb1623cb259bcf07b9850183e65.jpg","https://cdn.shibe.online/shibes/0ebcfd98e8aa61c048968cb37f66a2b5d9d54d4b.jpg"]
+            let kya = list[Math.floor(Math.random() * list.length)]
+            bocchi.sendFileFromUrl(from, kya, 'Dog.jpeg', 'Inu')
+            break
+        case 'kucing':
+            if (!isRegistered) return await bocchi.reply(from, 'Nomor kamu belum terdaftar di database! Silakan daftar dengan format:\n*!register* <nama | daerah>', id)
+            q2 = Math.floor(Math.random() * 900) + 300;
+            q3 = Math.floor(Math.random() * 900) + 300;
+            bocchi.sendFileFromUrl(from, 'http://placekitten.com/'+q3+'/'+q2, 'neko.png','Neko ')
+            break
+            case 'pantun':
+                if (!isRegistered) return await bocchi.reply(from, 'Nomor kamu belum terdaftar di database! Silakan daftar dengan format:\n*!register* <nama | daerah>', id)
+                bocchi.reply(from, 'Sedang mencari pantun yang sesuai mood kamu senpai...', id)
+                const cerpenn = await get.get('https://api.vhtear.com/random_pantun&apikey=0504032003slavyan').json()
+                bocchi.sendText(from, `\n${cerpenn.result.pantun}\n`)
             break
             case 'creepyfact': // By Kris
                 if (!isRegistered) return await bocchi.reply(from, ind.notRegistered(), id)
@@ -2364,7 +2534,7 @@ module.exports = msgHandler = async (bocchi = new Client(), message) => {
                 if (!isRegistered) return await bocchi.reply(from, ind.notRegistered(), id)
                 if (limit.isLimit(sender.id, _limit, limitCount, isPremium, isOwner)) return await bocchi.reply(from, ind.limit(), id)
                 limit.addLimit(sender.id, _limit, isPremium, isOwner)
-                await bocchi.reply(from, 'Sedang mencari gadis idaman buat senpai yang Jomblo Ngenes ⏳\n\nYahahaha canda jones', id)
+                await bocchi.reply(from, ind.wait(), id)
                 fun.asupan()
                     .then(async (body) => {
                         const asupan = body.split('\n')
@@ -2636,6 +2806,16 @@ module.exports = msgHandler = async (bocchi = new Client(), message) => {
                 console.log('Creating avatarwm text...')
                 await bocchi.sendFileFromUrl(from, `https://api.vhtear.com/avatarwolf?text1=IZUMI-BOT&text2=${q}&apikey=${config.vhtear}`, id)
                 console.log('Success creating avatarwm text!')
+            break
+            case 'candy':
+                if (!isRegistered) return await bocchi.reply(from, ind.notRegistered(), id)
+                if (!q) return await bocchi.reply(from, 'Contoh: *!candy aku suka permen*', id)
+                if (limit.isLimit(sender.id, _limit, limitCount, isPremium, isOwner)) return await bocchi.reply(from, ind.limit(), id)
+                limit.addLimit(sender.id, _limit, isPremium, isOwner)
+                await bocchi.reply(from, 'Silahkan tunggu sebentar...\nTunggu sebentar ya sayang', id)
+                console.log('Creating candy text...')
+                await bocchi.sendFileFromUrl(from, `https://videfikri.com/api/textmaker/sweetcandy/?text=${q}`, id)
+                console.log('Success creating candy text!')
             break
             case 'logo':
                 if (!isRegistered) return await bocchi.reply(from, ind.notRegistered(), id)
@@ -3551,7 +3731,7 @@ module.exports = msgHandler = async (bocchi = new Client(), message) => {
             case 'nhentai':
             case 'nh':
                 if (!isRegistered) return await bocchi.reply(from, ind.notRegistered(), id)
-                
+                if (!isPremium) return await bocchi.reply(from, ind.notPremium(), id)
 
                 if (args.length !== 1) return await bocchi.reply(from, ind.wrongFormat(), id)
                 if (isNaN(Number(args[0]))) return await bocchi.reply(from, ind.wrongFormat(), id)
@@ -3668,7 +3848,7 @@ module.exports = msgHandler = async (bocchi = new Client(), message) => {
                         })
                 }
             break
-            case 'nekopoi':
+            /*case 'nekopoiupdate':
                 if (!isRegistered) return await bocchi.reply(from, ind.notRegistered(), id)
                 //if (!q) return await bocchi.reply(from, ind.wrongFormat(), id)
                 if (limit.isLimit(sender.id, _limit, limitCount, isPremium, isOwner)) return await bocchi.reply(from, ind.limit(), id)
@@ -3679,8 +3859,9 @@ module.exports = msgHandler = async (bocchi = new Client(), message) => {
                         .then(async ({ result }) => {
                             for (let i = 0; i < 5; i++) {
                                 const { url, thumbnail, title, date } = await result[i]
-                                //await bocchi.sendFileFromUrl(from, thumbnail, `${title}.jpg`, ind.Nekopoii(url, title, date), id)
-                                bocchi.reply(from, ind.Nekopoii(url, title, date), id)
+                                const poi = `Judul: ${title}\n Rilis: ${date}\nLink: ${url}`
+                                await bocchi.sendFileFromUrl(from, thumbnail, `nekopoi.jpg`, poi)
+                                //bocchi.reply(from, ind.Nekopoii(url, title, date), id)
                                 console.log('Success sending nekopoi results!')
                             }
                         })
@@ -3688,10 +3869,10 @@ module.exports = msgHandler = async (bocchi = new Client(), message) => {
                     console.error(err)
                     await bocchi.reply(from, 'Maaf Senpai,Command ini masih dalam perbaikan!', id)
                 }
-            break
-            /*case 'nekopoi':
+            break*/
+            case 'nekopoi':
                 if (!isRegistered) return await bocchi.reply(from, ind.notRegistered(), id)
-                if (isGroupMsg) {
+                if (isGroupMsg) {if (!isPremium) return await bocchi.reply(from, ind.notPremium(), id)
                     if (!isNsfw) return await bocchi.reply(from, ind.notNsfw(), id)
                     if (limit.isLimit(sender.id, _limit, limitCount, isPremium, isOwner)) return await bocchi.reply(from, ind.limit(), id)
                     limit.addLimit(sender.id, _limit, isPremium, isOwner)
@@ -3709,6 +3890,7 @@ module.exports = msgHandler = async (bocchi = new Client(), message) => {
                         await bocchi.reply(from, 'Error!', id)
                     }
                 } else {
+                    if (!isPremium) return await bocchi.reply(from, ind.notPremium(), id)
                     if (limit.isLimit(sender.id, _limit, limitCount, isPremium, isOwner)) return await bocchi.reply(from, ind.limit(), id)
                     limit.addLimit(sender.id, _limit, isPremium, isOwner)
                     await bocchi.reply(from, ind.wait(), id)
@@ -3725,12 +3907,13 @@ module.exports = msgHandler = async (bocchi = new Client(), message) => {
                         await bocchi.reply(from, 'Error!', id)
                     }
                 }
-            break*/
+            break
             case 'nekosearch':
                 if (!isRegistered) return await bocchi.reply(from, ind.notRegistered(), id)
                 if (!q) return await bocchi.reply(from, ind.wrongFormat(), id)
                 if (isGroupMsg) {
                     if (!isNsfw) return await bocchi.reply(from, ind.notNsfw(), id)
+                    if (!isPremium) return await bocchi.reply(from, ind.notPremium(), id)
                     if (limit.isLimit(sender.id, _limit, limitCount, isPremium, isOwner)) return await bocchi.reply(from, ind.limit(), id)
                     limit.addLimit(sender.id, _limit, isPremium, isOwner)
                     await bocchi.reply(from, ind.wait(), id)
@@ -3747,6 +3930,7 @@ module.exports = msgHandler = async (bocchi = new Client(), message) => {
                         await bocchi.reply(from, 'Error!', id)
                     }
                 } else {
+                    if (!isPremium) return await bocchi.reply(from, ind.notPremium(), id)
                     if (limit.isLimit(sender.id, _limit, limitCount, isPremium, isOwner)) return await bocchi.reply(from, ind.limit(), id)
                     limit.addLimit(sender.id, _limit, isPremium, isOwner)
                     await bocchi.reply(from, ind.wait(), id)
@@ -3832,6 +4016,7 @@ module.exports = msgHandler = async (bocchi = new Client(), message) => {
             break*/
             case 'xnxx':
                 if (!isRegistered) return await bocchi.reply(from, 'Nomor kamu belum terdaftar di database! Silakan daftar dengan format:\n*!register* <nama | daerah>', id)
+                    if (!isPremium) return await bocchi.reply(from, ind.notPremium(), id)
                 if (!q) return await bocchi.reply(from, 'Kirim perintah *!xnxx judul bokep*\nConntoh *!xnxx japan*', id)
                 const xnxxget = await get.get(`https://api.vhtear.com/xxxsearch?query=${q}&apikey=${config.vhtear}`).json()
               if (xnxxget.error) {
@@ -3840,11 +4025,28 @@ module.exports = msgHandler = async (bocchi = new Client(), message) => {
                   for (let i = 0; i < xnxxget.result.data.length; i++) {
                       const { title, url, duration, image } = xnxxget.result.data[i]
                       const txt = `Title: ${title}\nURL: ${url}\nDuration: ${duration}`
-                      //await bocchi.sendFileFromUrl(from, image, 'xnxx.jpg', txt)
-                      bocchi.reply(from, txt, id)
+                      await bocchi.sendFileFromUrl(from, image, 'xnxx.jpg', txt)
+                      //bocchi.reply(from, txt, id)
                   }
               }
             break
+            case 'nekopoiupdate':
+                if (!isRegistered) return await bocchi.reply(from, 'Nomor kamu belum terdaftar di database! Silakan daftar dengan format:\n*!register* <nama | daerah>', id)
+                    if (!isPremium) return await bocchi.reply(from, ind.notPremium(), id)
+                //if (!q) return await bocchi.reply(from, 'Kirim perintah *!xnxx judul bokep*\nConntoh *!xnxx japan*', id)
+                const poiget = await get.get(`https://api.vhtear.com/nekohentai&apikey=${config.vhtear}`)
+              if (poiget.error) {
+                  client.reply(from, poiget.error, id)
+              } else {
+                  for (let i = 0; i < poiget.result.length; i++) {
+                      const { title, url, date, thumbnail } = poiget.result[i]
+                      const txt = `Title: ${title}\nurl: ${url}\nDate: ${date}`
+                      await bocchi.sendFileFromUrl(from, thumbnail, 'poipoi.jpg', txt)
+                      //bocchi.reply(from, txt, id)
+                  }
+              }
+            break
+
             case 'waifu18':
                 if (!isRegistered) return await bocchi.reply(from, ind.notRegistered(), id)
                     
@@ -3879,6 +4081,78 @@ module.exports = msgHandler = async (bocchi = new Client(), message) => {
                             await bocchi.reply(from, 'Maaf Senpai,Command ini masih dalam perbaikan!', id)
                         })
                 }
+            break
+            case 'masturb':
+            if (isGroupMsg) {
+                if (!isNsfw) return kill.reply(from, mess.error.Ac, id)
+                if (triple == 1) {
+                    const solog = await axios.get('https://nekos.life/api/v2/img/solog')
+                    await kill.sendFileFromUrl(from, solog.data.url, '', '', id)
+                } else if (triple == 2) {
+                    const pwank = await axios.get('https://nekos.life/api/v2/img/solog')
+                    await kill.sendFileFromUrl(from, pwank.data.url, '', '', id)
+                } else if (triple == 3) {
+                    const solour = await axios.get('https://nekos.life/api/v2/img/solo')
+                    await kill.sendFileFromUrl(from, solour.data.url, '', '', id)
+                }
+            } else {
+                if (triple == 1) {
+                    const solog = await axios.get('https://nekos.life/api/v2/img/solog')
+                    await kill.sendFileFromUrl(from, solog.data.url, '', '', id)
+                } else if (triple == 2) {
+                    const pwank = await axios.get('https://nekos.life/api/v2/img/solog')
+                    await kill.sendFileFromUrl(from, pwank.data.url, '', '', id)
+                } else if (triple == 3) {
+                    const solour = await axios.get('https://nekos.life/api/v2/img/solo')
+                    await kill.sendFileFromUrl(from, solour.data.url, '', '', id)
+                }
+            }
+            break
+             case 'masturbation':
+                 if (!isRegistered) return await bocchi.reply(from, ind.notRegistered(), id)
+                if (isGroupMsg) {
+                    if (!isPremium) return await bocchi.reply(from, ind.notPremium(), id)
+                    if (!isNsfw) return await bocchi.reply(from, ind.notNsfw(), id)
+                    if (limit.isLimit(sender.id, _limit, limitCount, isPremium, isOwner)) return await bocchi.reply(from, ind.limit(), id)
+                    limit.addLimit(sender.id, _limit, isPremium, isOwner)
+                    await bocchi.reply(from, ind.wait(), id)
+                const kucing = await get.get('https://nekos.life/api/v2/img/solog').json()
+                if (kucing.error) return bocchi.reply(from, kucing.error, id)
+                const res_kucing = `*CROOOT MAS*`
+                bocchi.sendFileFromUrl(from, kucing.url, 'nekoo.mp4', res_kucing, id)
+             } else {
+                    if (!isPremium) return await bocchi.reply(from, ind.notPremium(), id)
+                    if (limit.isLimit(sender.id, _limit, limitCount, isPremium, isOwner)) return await bocchi.reply(from, ind.limit(), id)
+                    limit.addLimit(sender.id, _limit, isPremium, isOwner)
+                    await bocchi.reply(from, ind.wait(), id)
+                                const kucing = await get.get('https://nekos.life/api/v2/img/solog').json()
+                if (kucing.error) return bocchi.reply(from, kucing.error, id)
+                const res_kucing = `*CROOOT MAS*`
+                bocchi.sendFileFromUrl(from, kucing.url, 'nekoo.mp4', res_kucing, id)
+             }
+            break
+             case 'cum':
+                 if (!isRegistered) return await bocchi.reply(from, ind.notRegistered(), id)
+                if (isGroupMsg) {
+                    if (!isPremium) return await bocchi.reply(from, ind.notPremium(), id)
+                    if (!isNsfw) return await bocchi.reply(from, ind.notNsfw(), id)
+                    if (limit.isLimit(sender.id, _limit, limitCount, isPremium, isOwner)) return await bocchi.reply(from, ind.limit(), id)
+                    limit.addLimit(sender.id, _limit, isPremium, isOwner)
+                    await bocchi.reply(from, ind.wait(), id)
+                const kucing = await get.get('https://nekos.life/api/v2/img/cum_jpg').json()
+                if (kucing.error) return bocchi.reply(from, kucing.error, id)
+                const res_kucing = `*CROOOT MAS*`
+                bocchi.sendFileFromUrl(from, kucing.url, 'nekoo.jpg', res_kucing, id)
+             } else {
+                    if (!isPremium) return await bocchi.reply(from, ind.notPremium(), id)
+                    if (limit.isLimit(sender.id, _limit, limitCount, isPremium, isOwner)) return await bocchi.reply(from, ind.limit(), id)
+                    limit.addLimit(sender.id, _limit, isPremium, isOwner)
+                    await bocchi.reply(from, ind.wait(), id)
+                                const kucing = await get.get('https://nekos.life/api/v2/img/cum_jpg').json()
+                if (kucing.error) return bocchi.reply(from, kucing.error, id)
+                const res_kucing = `*CROOOT MAS*`
+                bocchi.sendFileFromUrl(from, kucing.url, 'nekoo.jpg', res_kucing, id)
+             }
             break
             case 'phdl':
                 if (!isRegistered) return await bocchi.reply(from, ind.notRegistered(), id)
@@ -4092,7 +4366,7 @@ module.exports = msgHandler = async (bocchi = new Client(), message) => {
                 if (!isGroupMsg) return await bocchi.reply(from, ind.groupOnly(), id)
                 if (!isGroupAdmins) return await bocchi.reply(from, ind.adminOnly(), id)
                 if (!isBotGroupAdmins) return await bocchi.reply(from, ind.botNotAdmin(), id)
-                if (mentionedJidList.length === 0) return await bocchi.reply(from, `ketik !kick 0878xxxxxxx`, id)
+                if (mentionedJidList.length === 0) return await bocchi.reply(from, `ketik !kick tag member`, id)
                 if (mentionedJidList[0] === botNumber) return await bocchi.reply(from, ind.wrongFormat(), id)
                 if (limit.isLimit(sender.id, _limit, limitCount, isPremium, isOwner)) return await bocchi.reply(from, ind.limit(), id)
                 limit.addLimit(sender.id, _limit, isPremium, isOwner)
@@ -4107,7 +4381,7 @@ module.exports = msgHandler = async (bocchi = new Client(), message) => {
                 if (!isGroupMsg) return await bocchi.reply(from, ind.groupOnly(), id)
                 if (!isGroupAdmins) return await bocchi.reply(from, ind.adminOnly(), id)
                 if (!isBotGroupAdmins) return await bocchi.reply(from, ind.botNotAdmin(), id)
-                if (mentionedJidList.length !== 1) return await bocchi.reply(from, `ketik !promote 0878xxxxxxx`, id)
+                if (mentionedJidList.length !== 1) return await bocchi.reply(from, `ketik !promote tag member`, id)
                 if (mentionedJidList[0] === botNumber) return await bocchi.reply(from, ind.wrongFormat(), id)
                 if (groupAdmins.includes(mentionedJidList[0])) return await bocchi.reply(from, ind.adminAlready(), id)
                 if (limit.isLimit(sender.id, _limit, limitCount, isPremium, isOwner)) return await bocchi.reply(from, ind.limit(), id)
@@ -4214,6 +4488,13 @@ module.exports = msgHandler = async (bocchi = new Client(), message) => {
                     await bocchi.reply(from, ind.wrongFormat(), id)
                 }
             break
+            // Simple anti virtext, sorted by chat length, by: VideFrelan
+            if (isGroupMsg && !isGroupAdmins && !isOwner) {
+                if (chats.length > 5000) {
+                    await bocchi.sendTextWithMentions(from, `Terdeteksi @${sender.id} telah mengirim Virtext\nAnda akan dikick!`)
+                    await bocchi.removeParticipant(groupId, sender.id)
+                 }
+             }
             case 'antilink':
                 if (!isRegistered) return await bocchi.reply(from, ind.notRegistered(), id)
                 if (!isGroupMsg) return await bocchi.reply(from, ind.groupOnly(), id)
