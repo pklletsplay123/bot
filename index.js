@@ -106,7 +106,7 @@ const start = (bocchi = new Client()) => {
                 } else {
                     picxs = pic
                 }
-                const bye = await new canvas.Goodbye()
+                const bye = await new canvas.Sayonara()
                     .setUsername(pushname)
                     .setDiscriminator(event.who.substring(6, 10))
                     .setMemberCount(groupMetadata.participants.length)
@@ -117,10 +117,10 @@ const start = (bocchi = new Client()) => {
                     .setColor('discriminator-box', '#00100C')
                     .setColor('message-box', '#00100C')
                     .setColor('title', '#00FFFF')
-                    .setBackground('https://www.photohdx.com/images/2016/05/red-blurry-background.jpg')
+                    .setBackground('https://www.photohdx.com/images/2019/08/black-foam-texture-background.jpg')
                     .toAttachment()
                 const base64 = `data:image/png;base64,${bye.toBuffer().toString('base64')}`
-                await bocchi.sendFile(event.chat, base64, 'welcome.png', `Bye ${pushname}, we will miss you~`)
+                await bocchi.sendFile(event.chat, base64, 'welcome.png', `Sayonara ${pushname}, semoga tenang dialam sana xixixixi~`)
             }
         } catch (err) {
             console.error(err)
