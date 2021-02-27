@@ -493,7 +493,11 @@ Berikut adalah beberapa command yang ada pada bot ini!✨
 
 ♻ Command Otaku :
 
-   ⚜ *!randomneko*
+   ⚜ *!doujindesu* 🔞
+   ⚜ *!character* 🆕
+   ⚜ *!randomneko* 🆕
+   ⚜ *!husbu* 🆕
+   ⚜ *!kpop* 🆕
    ⚜ *!nsfwlist* 🔞
    ⚜ *!wallpaper*
    ⚜ *!kusonime* (Judul Anime)
@@ -519,6 +523,7 @@ Berikut adalah beberapa command yang ada pada bot ini!✨
 ♻ Command Edukasi :
 
    ⚜ *!wiki*
+   ⚜ *!nulis*
    ⚜ *!brainly* (pertanyaan) 🆕
    ⚜ *!creepyfact*
    ⚜ *!kbbi* (query)
@@ -535,10 +540,15 @@ Berikut adalah beberapa command yang ada pada bot ini!✨
 ♻ Command Random *IZUMI-BOT* :
 
    ⚜ *!editor* 🆕
+   ⚜ *!terbalik* 🆕
+   ⚜ *!imgsearch* 🆕
+   ⚜ *!inu* 🆕
+   ⚜ *!kucing* 🆕
+   ⚜ *!pantun* 🆕
    ⚜ *!reply* (Menirukan Pesan)
-   ⚜ *!ssweb* (nekopoi.care) 🆕
-   ⚜ *!google* (query) 🆕
-   ⚜ *!jatidiri* (nama) 🆕
+   ⚜ *!ssweb* (nekopoi.care) 
+   ⚜ *!google* (query) 
+   ⚜ *!jatidiri* (nama) 
    ⚜ *!truthordare* (truth or dare)
    ⚜ *!citacita*
    ⚜ *!nsfwlist* 🔞
@@ -1606,6 +1616,7 @@ exports.editor = () => {
     return `
 ♻️ Command Editor Berkelas :
 
+   ⚜ *!candy* 🆕
    ⚜ *!logo* 🆕
    ⚜ *!avatarnowm* 🆕
    ⚜ *!avatar* 🆕
@@ -1637,7 +1648,9 @@ exports.nsfww = () => {
     return `
 🔞 Command NSFW :
 
-   ⚜ *!xnxx* (Judul Bokep)🔞
+   ⚜ *!masturbation*🔞
+   ⚜ *!cum*🔞
+   ⚜ *!xnxx* (Judul)🔞
    ⚜ *!trap*🔞
    ⚜ *!furry*🔞
    ⚜ *!lewd*🔞
